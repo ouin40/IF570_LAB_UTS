@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "125842566029",
+    "firebase_url": "https://if570-lab-uts-godwin-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "if570-lab-uts-godwin",
+    "storage_bucket": "if570-lab-uts-godwin.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:125842566029:android:458468d4aac7fe55dbebc4",
+        "android_client_info": {
+          "package_name": "com.example.if570_lab_uts_godwingilbertwoisiri_83560"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwttMooG5R_8DPufyHE1YD4hpxh-xurxk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
