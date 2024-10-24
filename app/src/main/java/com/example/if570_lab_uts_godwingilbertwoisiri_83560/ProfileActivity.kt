@@ -37,6 +37,10 @@ class ProfileActivity : AppCompatActivity() {
         val nameField = findViewById<EditText>(R.id.name)
         val nimField = findViewById<EditText>(R.id.nim)
         val save = findViewById<Button>(R.id.btn_save)
+        val logoutButton: Button = findViewById(R.id.btn_logout)
+        logoutButton.setOnClickListener {
+            logout()
+        }
 
         fetchUserName()
 
@@ -101,6 +105,15 @@ class ProfileActivity : AppCompatActivity() {
                     ).show()
                 }
             })
+    }
+
+    private fun logout() {
+        auth.signOut()
+        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
+
+        // Redirect to LoginActivity or MainActivity
+        startActivity(Intent(this, MainActivity::class.java))
+        finish() // Close ProfileActivity
     }
 
 

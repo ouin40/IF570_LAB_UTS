@@ -24,8 +24,6 @@ class HomeActivity : AppCompatActivity() {
 
     private val REQUEST_IMAGE_CAPTURE = 1
     private val CAMERA_PERMISSION_CODE = 100
-    private lateinit var currentPhotoPath: String
-    private lateinit var imageUri: Uri
     private lateinit var storage: FirebaseStorage
     private lateinit var database: DatabaseReference
     private lateinit var auth: FirebaseAuth
@@ -34,13 +32,15 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
+        // Disable the Check Out button initially
+        findViewById<Button>(R.id.btn_out).isEnabled = false
+
         // Check for camera permission
         if (checkSelfPermission(android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(android.Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
         }
 
         findViewById<Button>(R.id.btn_absen).setOnClickListener {
-            // Check again before dispatching the intent
             if (checkSelfPermission(android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 dispatchTakePictureIntent()
             } else {
@@ -50,6 +50,11 @@ class HomeActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
+        }
+
+        // Set up Check Out button
+        findViewById<Button>(R.id.btn_out).setOnClickListener {
+            updateAbsensi("checkOut") // Call the function to handle check-out
         }
 
         setupBottomNavigation()
@@ -73,10 +78,8 @@ class HomeActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == CAMERA_PERMISSION_CODE) {
             if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                // Permission granted
                 Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show()
             } else {
-                // Permission denied
                 Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show()
             }
         }
@@ -84,12 +87,10 @@ class HomeActivity : AppCompatActivity() {
 
     private fun dispatchTakePictureIntent() {
         val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        // Ensure that there's a camera activity to handle the intent
         if (takePictureIntent.resolveActivity(packageManager) != null) {
             startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
         }
     }
-
 
     private fun fetchUserName() {
         val uid = auth.currentUser?.uid ?: return
@@ -116,8 +117,7 @@ class HomeActivity : AppCompatActivity() {
 
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             val imageBitmap = data?.extras?.get("data") as Bitmap
-            val imageView: ImageView =
-                findViewById(R.id.imageView) // Make sure you have an ImageView in your layout
+            val imageView: ImageView = findViewById(R.id.imageView)
             imageView.setImageBitmap(imageBitmap)
 
             val uid = auth.currentUser?.uid ?: return
@@ -130,106 +130,75 @@ class HomeActivity : AppCompatActivity() {
 
             storageRef.putBytes(imageData).addOnSuccessListener {
                 storageRef.downloadUrl.addOnSuccessListener { uri ->
-                    saveAbsensi(uri.toString())
+                    updateAbsensi("checkIn", uri.toString())
                 }
             }
         }
     }
 
-    private fun saveAbsensi(imageUrl: String) {
+    private fun updateAbsensi(action: String, imageUrl: String? = null) {
         val uid = auth.currentUser?.uid ?: return
         val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-
         val userAbsensiRef = database.child("absensi").child(uid)
 
         userAbsensiRef.orderByChild("date").equalTo(currentDate)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        Toast.makeText(
-                            this@HomeActivity,
-                            "Anda sudah absen masuk hari ini.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        val absensi = Absensi(imageUrl, System.currentTimeMillis(), currentDate)
-                        userAbsensiRef.push().setValue(absensi).addOnCompleteListener {
-                            if (it.isSuccessful) {
-                                Toast.makeText(
-                                    this@HomeActivity,
-                                    "Absen berhasil.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                Toast.makeText(
-                                    this@HomeActivity,
-                                    "Absen gagal.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(
-                        this@HomeActivity,
-                        "Gagal memuat data absen.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            })
-    }
-
-    private fun saveCheckOut() {
-        val uid = auth.currentUser?.uid ?: return
-        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-
-        val userAbsensiRef = database.child("absensi").child(uid)
-
-        userAbsensiRef.orderByChild("date").equalTo(currentDate)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists()) {
-                        Toast.makeText(
-                            this@HomeActivity,
-                            "Anda harus absen masuk sebelum keluar.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        val checkOutData = mapOf("checkOutTime" to System.currentTimeMillis())
-                        userAbsensiRef.orderByChild("date").equalTo(currentDate)
-                            .addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(snapshot: DataSnapshot) {
-                                    snapshot.children.forEach { childSnapshot ->
-                                        childSnapshot.ref.child("checkOutTime")
-                                            .setValue(System.currentTimeMillis())
-                                            .addOnCompleteListener {
-                                                if (it.isSuccessful) {
-                                                    Toast.makeText(
-                                                        this@HomeActivity,
-                                                        "Absen keluar berhasil.",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                } else {
-                                                    Toast.makeText(
-                                                        this@HomeActivity,
-                                                        "Absen keluar gagal.",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            }
-                                    }
-                                }
-
-                                override fun onCancelled(error: DatabaseError) {
+                    if (action == "checkIn") {
+                        if (snapshot.exists()) {
+                            Toast.makeText(
+                                this@HomeActivity,
+                                "Anda sudah absen masuk hari ini.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            val absensi =
+                                Absensi(imageUrl!!, System.currentTimeMillis(), currentDate)
+                            userAbsensiRef.push().setValue(absensi).addOnCompleteListener {
+                                if (it.isSuccessful) {
                                     Toast.makeText(
                                         this@HomeActivity,
-                                        "Gagal memuat data absen.",
+                                        "Absen berhasil.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    findViewById<Button>(R.id.btn_out).isEnabled =
+                                        true // Enable Check Out button
+                                } else {
+                                    Toast.makeText(
+                                        this@HomeActivity,
+                                        "Absen gagal.",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
-                            })
+                            }
+                        }
+                    } else if (action == "checkOut") {
+                        if (!snapshot.exists()) {
+                            Toast.makeText(
+                                this@HomeActivity,
+                                "Anda harus absen masuk sebelum keluar.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            snapshot.children.forEach { childSnapshot ->
+                                childSnapshot.ref.child("checkOutTime")
+                                    .setValue(System.currentTimeMillis()).addOnCompleteListener {
+                                    if (it.isSuccessful) {
+                                        Toast.makeText(
+                                            this@HomeActivity,
+                                            "Absen keluar berhasil.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        Toast.makeText(
+                                            this@HomeActivity,
+                                            "Absen keluar gagal.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
