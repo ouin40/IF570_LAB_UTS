@@ -7,7 +7,7 @@
     <string name="full_name">Full Name</string>
     <string name="nim">NIM</string>
     <string name="save_profile">Save Profile</string>
-    <string name="absen">Absen</string>
+    <string name="absen">Absen Masuk</string>
     <string name="timestamp">Timestamp</string>
     <string name="home">Home</string>
     <string name="history">History</string>
@@ -15,4 +15,5 @@
     <string name="nama">Nama</string>
     <string name="nama_pengguna">Nama Pengguna</string>
     <string name="date">Date</string>
+    <string name="absen_keluar">Absen Keluar</string>
 </resources>

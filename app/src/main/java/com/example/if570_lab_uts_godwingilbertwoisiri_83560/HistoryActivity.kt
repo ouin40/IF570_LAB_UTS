@@ -57,11 +57,13 @@ class HistoryActivity : AppCompatActivity() {
         val database = FirebaseDatabase.getInstance().reference.child("absensi").child(uid)
 
         database.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
                 val absensiList = mutableListOf<Absensi>()
-                for (absensiSnapshot in snapshot.children) {
-                    val absensi = absensiSnapshot.getValue(Absensi::class.java)
-                    absensi?.let { absensiList.add(it) }
+                for (snapshot in dataSnapshot.children) {
+                    val absensi = snapshot.getValue(Absensi::class.java)
+                    if (absensi != null) {
+                        absensiList.add(absensi)
+                    }
                 }
 
                 val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
@@ -69,7 +71,7 @@ class HistoryActivity : AppCompatActivity() {
                 recyclerView.adapter = AbsensiAdapter(absensiList)
             }
 
-            override fun onCancelled(error: DatabaseError) {
+            override fun onCancelled(databaseError: DatabaseError) {
                 Toast.makeText(this@HistoryActivity, "Gagal load data", Toast.LENGTH_SHORT).show()
             }
         })

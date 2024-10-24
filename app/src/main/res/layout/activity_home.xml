@@ -40,14 +40,31 @@
             android:paddingBottom="15dp"
             android:format12Hour="hh:mm:ss a" />
 
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="16dp"
+            android:scaleType="centerCrop" />
+
         <Button
             android:id="@+id/btn_absen"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="25dp"
             android:layout_marginHorizontal="50dp"
-            android:layout_marginBottom="50dp"
             android:text="@string/absen"
             android:backgroundTint="@color/black" />
+
+        <Button
+            android:id="@+id/btn_out"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginHorizontal="100dp"
+            android:text="@string/absen_keluar"
+            android:backgroundTint="@color/white"
+            android:textColor="@color/black"/>
 
     </LinearLayout>
 
